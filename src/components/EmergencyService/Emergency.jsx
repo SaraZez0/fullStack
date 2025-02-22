@@ -21,6 +21,10 @@ const Emergency = () => {
     const [lat, setLat] = useState(null);
     const [long, setLong] = useState(null);
 
+    const removeCar = (uuid) => {
+        setCars((prevCars) => prevCars.filter(car => car.uuid !== uuid));
+    };
+
     useEffect(() => {
         const eventSource = new EventSource("http://localhost:5000/events?stream=messages", { withCredentials: true });
 
@@ -73,14 +77,19 @@ const Emergency = () => {
             <Header />
             {selectedCar ? (
                 <Map selectedCar={selectedCar} lat={lat} long={long} onBack={() => setSelectedCar(null)} />
+
             ) : (
                 <section className="row d-flex justify-content-center">
                     <div className="col-lg-6 col-md-8 col-sm-10 p-3 rounded-3">
-                        <CarList cars={cars} onSelectCar={(car) => {
-                            setSelectedCar(car.uuid);
-                            setLat(car.latitude);
-                            setLong(car.longitude);
-                        }} />
+                        <CarList
+                            cars={cars}
+                            onSelectCar={(car) => {
+                                setSelectedCar(car.uuid);
+                                setLat(car.latitude);
+                                setLong(car.longitude);
+                            }}
+                            onRemoveCar={removeCar}
+                        />
                     </div>
                 </section>
             )}
@@ -88,13 +97,13 @@ const Emergency = () => {
     );
 };
 
-const CarList = ({ cars, onSelectCar }) => {
+const CarList = ({ cars, onSelectCar, onRemoveCar }) => {
     return (
         <div className="container border border-dark rounded-3 p-4" style={{ height: "90vh", overflowY: "auto" }}>
             <div className="row">
                 {cars.map((car, index) => (
                     <div key={car.id} className="col-12 mb-3">
-                        <CarItem car={car} isLast={index === cars.length - 1} onSelectCar={onSelectCar} />
+                        <CarItem car={car} isLast={index === cars.length - 1} onSelectCar={onSelectCar} onRemoveCar={onRemoveCar} />
                     </div>
                 ))}
             </div>
@@ -102,7 +111,7 @@ const CarList = ({ cars, onSelectCar }) => {
     );
 };
 
-const CarItem = ({ car, isLast, onSelectCar }) => {
+const CarItem = ({ car, isLast, onSelectCar, onRemoveCar }) => {
     return (
         <article className={`w-100 ${!isLast ? "mb-4" : ""}`}>
             <div className="d-flex flex-wrap justify-content-between align-items-center">
@@ -120,6 +129,15 @@ const CarItem = ({ car, isLast, onSelectCar }) => {
                         }}
                         aria-label="Car status button"
                     />
+                    <button
+                        type="button"
+                        className="btn  d-flex align-items-center justify-content-center"
+                        style={{ width: "40px", height: "40px" }}
+                        onClick={() => onRemoveCar(car.uuid)}
+                        aria-label="Remove car"
+                    >
+                        ❌
+                    </button>
                 </div>
             </div>
             <hr className="mt-3 border-dark" />
@@ -130,7 +148,9 @@ const CarItem = ({ car, isLast, onSelectCar }) => {
 const Map = ({ selectedCar, lat, long, onBack }) => {
     const handleDone = () => {
         console.log("Done clicked");
+        onBack(); // عند الضغط على "Done"، نعود إلى قائمة السيارات
     };
+
     return (
         <main className="container-fluid bg-light">
             <div className="container text-center">
@@ -154,10 +174,7 @@ const Map = ({ selectedCar, lat, long, onBack }) => {
                                 )}
                             </MapContainer>
 
-                            <div
-                                className="p-3 pb-0 bg-white rounded-3 shadow border border-dark mx-auto paragragh"
-                                style={{ width: "90%" }}
-                            >
+                            <div className="p-3 pb-0 bg-white rounded-3 shadow border border-dark mx-auto paragragh" style={{ width: "90%" }}>
                                 <h2 className="fw-bold">Preliminary Diagnosis:</h2>
                                 <ul className="list-unstyled fs-4 fs-sm-6">
                                     <li>Uncontrolled hypertension.</li>
@@ -185,5 +202,6 @@ const Map = ({ selectedCar, lat, long, onBack }) => {
         </main>
     );
 };
+
 
 export default Emergency;
