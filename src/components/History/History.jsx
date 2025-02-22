@@ -6,6 +6,8 @@ import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import "./Map.css";
+import { useMap } from "react-leaflet";
+
 
 const customIcon = new L.Icon({
     iconUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png",
@@ -14,12 +16,24 @@ const customIcon = new L.Icon({
     popupAnchor: [1, -34],
 });
 
+const MapView = ({ lat, long, zoom }) => {
+    const map = useMap();
+
+    useEffect(() => {
+        if (lat && long) {
+            map.setView([lat, long], zoom); // استخدم zoom من state
+        }
+    }, [lat, long, zoom, map]);
+
+    return null;
+};
+
 const History = () => {
     const [cars, setCars] = useState([]);
     const [selectedCar, setSelectedCar] = useState(null);
     const [lat, setLat] = useState(30.0444);
     const [long, setLong] = useState(31.2357);
-
+    const [zoom, setZoom] = useState(5);
     useEffect(() => {
         const eventSource = new EventSource("http://localhost:5000/events?stream=messages", { withCredentials: true });
 
@@ -80,7 +94,7 @@ const History = () => {
                     }} />
                 </div>
                 <div className="col-md-8 p-3">
-                    <Map lat={lat} long={long} />
+                    <Map lat={lat} long={long} zoom={zoom} />
                 </div>
             </div>
         </main>
@@ -109,7 +123,9 @@ const CarItem = ({ car, isLast, onSelectCar }) => {
                 <button
                     type="button"
                     className="btn p-0 border-0"
-                    onClick={() => onSelectCar(car)}
+                    onClick={() => {
+                        onSelectCar(car); // تحديد السيارة ونقل الخريطة إليها
+                    }}
                     style={{
                         width: "40px",
                         height: "40px",
@@ -123,12 +139,11 @@ const CarItem = ({ car, isLast, onSelectCar }) => {
         </article>
     );
 };
-
 const Map = ({ lat, long }) => {
     return (
         <MapContainer
             center={[lat, long]}
-            zoom={13}
+            zoom={5}
             style={{ height: "500px", width: "100%" }}
             className="rounded-3 shadow border border-dark"
         >
@@ -136,6 +151,7 @@ const Map = ({ lat, long }) => {
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             />
+            <MapView lat={lat} long={long} />
             <Marker position={[lat, long]} icon={customIcon}>
                 <Popup>Car Location</Popup>
             </Marker>

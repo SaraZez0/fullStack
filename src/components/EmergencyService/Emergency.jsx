@@ -7,6 +7,7 @@ import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import "./Map.css";
+import { useMap } from "react-leaflet";
 
 const customIcon = new L.Icon({
     iconUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png",
@@ -15,11 +16,24 @@ const customIcon = new L.Icon({
     popupAnchor: [1, -34],
 });
 
+const MapView = ({ lat, long, zoom }) => {
+    const map = useMap();
+
+    useEffect(() => {
+        if (lat && long) {
+            map.setView([lat, long], zoom); // استخدام التكبير الديناميكي
+        }
+    }, [lat, long, zoom, map]);
+
+    return null;
+};
 const Emergency = () => {
     const [cars, setCars] = useState([]);
     const [selectedCar, setSelectedCar] = useState(null);
     const [lat, setLat] = useState(null);
     const [long, setLong] = useState(null);
+    const [zoom, setZoom] = useState(5);
+
 
     const removeCar = (uuid) => {
         setCars((prevCars) => prevCars.filter(car => car.uuid !== uuid));
@@ -76,7 +90,8 @@ const Emergency = () => {
         <main className="container-fluid bg-light">
             <Header />
             {selectedCar ? (
-                <Map selectedCar={selectedCar} lat={lat} long={long} onBack={() => setSelectedCar(null)} />
+                <Map selectedCar={selectedCar} lat={lat} long={long} zoom={zoom} onBack={() => setSelectedCar(null)} />
+
 
             ) : (
                 <section className="row d-flex justify-content-center">
@@ -145,10 +160,10 @@ const CarItem = ({ car, isLast, onSelectCar, onRemoveCar }) => {
     );
 };
 
-const Map = ({ selectedCar, lat, long, onBack }) => {
+const Map = ({ selectedCar, lat, long, onBack, zoom }) => {
     const handleDone = () => {
         console.log("Done clicked");
-        onBack(); // عند الضغط على "Done"، نعود إلى قائمة السيارات
+        onBack(); // العودة إلى قائمة السيارات
     };
 
     return (
@@ -158,8 +173,8 @@ const Map = ({ selectedCar, lat, long, onBack }) => {
                     <div className="row justify-content-center">
                         <div className="col-12 col-md-8 col-lg-6">
                             <MapContainer
-                                center={lat && long ? [lat, long] : [30.0444, 31.2357]}
-                                zoom={13}
+                                center={[lat || 30.0444, long || 31.2357]}
+                                zoom={zoom}
                                 style={{ height: "300px", width: "100%" }}
                                 className="rounded-3 shadow border border-dark"
                             >
@@ -168,9 +183,12 @@ const Map = ({ selectedCar, lat, long, onBack }) => {
                                     attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                                 />
                                 {lat && long && (
-                                    <Marker position={[lat, long]} icon={customIcon}>
-                                        <Popup>Emergency Location</Popup>
-                                    </Marker>
+                                    <>
+                                        <MapView lat={lat} long={long} />
+                                        <Marker position={[lat, long]} icon={customIcon}>
+                                            <Popup>Emergency Location</Popup>
+                                        </Marker>
+                                    </>
                                 )}
                             </MapContainer>
 
